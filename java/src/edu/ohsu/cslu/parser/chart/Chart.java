@@ -21,12 +21,6 @@
  */
 package edu.ohsu.cslu.parser.chart;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-
-import java.util.LinkedList;
-import java.util.List;
-
 import cltool4j.args4j.EnumAliasMap;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
@@ -35,6 +29,11 @@ import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.util.MutableEnumeration;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public abstract class Chart {
 
@@ -459,6 +458,9 @@ public abstract class Chart {
             }
             return prod.prob; // lexical
         }
+
+        // HACK: testing with the atomic cellchart
+        public float insideCachedValue = Float.NEGATIVE_INFINITY;
 
         public final int start() {
             return leftCell.start();

@@ -21,22 +21,19 @@
  */
 package edu.ohsu.cslu.parser.ecp;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
 import edu.ohsu.cslu.grammar.CoarseGrammar;
 import edu.ohsu.cslu.grammar.LeftListGrammar;
 import edu.ohsu.cslu.grammar.Production;
-import edu.ohsu.cslu.parser.ChartParser;
-import edu.ohsu.cslu.parser.ParseTask;
-import edu.ohsu.cslu.parser.Parser;
-import edu.ohsu.cslu.parser.ParserDriver;
-import edu.ohsu.cslu.parser.Util;
+import edu.ohsu.cslu.parser.*;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.ohsu.cslu.parser.chart.InOutCellChart;
 import edu.ohsu.cslu.parser.chart.InOutCellChart.ChartCell;
+import org.apache.commons.lang.NotImplementedException;
+
+import java.util.Arrays;
+import java.util.LinkedList;
 
 /**
  * Exhaustive chart parser which performs inside-outside inference
@@ -258,7 +255,9 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                 final int end = start + span;
                 final ChartCell cell = chart.getCell(start, end);
                 Arrays.fill(maxcScore[start][end], Float.NEGATIVE_INFINITY);
-                Arrays.fill(cell.bestEdge, null);
+                for(int ii = 0; ii < cell.bestEdge.length(); ii++)
+                    cell.bestEdge.set(ii, null);
+                //Arrays.fill(cell.bestEdge, null);
 
                 if (span == 1) {
                     // lexical productions
@@ -269,7 +268,10 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
                         if (gScore > maxcScore[start][end][A]) {
                             maxcScore[start][end][A] = gScore;
-                            cell.bestEdge[A] = chart.new ChartEdge(lexProd, cell);
+
+                            throw new NotImplementedException();
+                            //cell.bestEdge[A] = chart.new ChartEdge(lexProd, cell);
+
                             // logger.finest("maxc=" + maxcScore[start][end][A] + "\t" + cell.bestEdge[A]);
                         }
                     }
@@ -289,7 +291,12 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
                                             + maxcScore[mid][end][p.rightChild];
                                     if (gScore > maxcScore[start][end][A]) {
                                         maxcScore[start][end][A] = gScore;
-                                        cell.bestEdge[A] = chart.new ChartEdge(p, leftCell, rightCell);
+
+
+                                        throw new NotImplementedException();
+                                        //cell.bestEdge[A] = chart.new ChartEdge(p, leftCell, rightCell);
+
+
                                         // logger.finest("maxc=" + maxcScore[start][end][A] + "\t" +
                                         // cell.bestEdge[A]);
                                     }
@@ -309,7 +316,11 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
 
                         if (gScore > maxcUnaryScores[A]) {
                             maxcUnaryScores[A] = gScore;
-                            cell.bestEdge[A] = chart.new ChartEdge(p, cell);
+
+                            throw new NotImplementedException();
+                            //cell.bestEdge[A] = chart.new ChartEdge(p, cell);
+
+
                             // logger.finest("maxc=" + maxcUnaryScores[A] + "\t" + cell.bestEdge[A]);
                         }
                     }
@@ -472,7 +483,11 @@ public class ECPInsideOutside extends ChartParser<LeftListGrammar, InOutCellChar
             edge = chart.new ChartEdge(p, chart.getCell(start, midpt), chart.getCell(midpt, end));
         }
 
-        curCell.bestEdge[parent] = edge;
+
+        throw new NotImplementedException();
+        // curCell.bestEdge[parent] = edge;
+
+
         // System.out.println("[" + start + "," + end + "] " + p.toString());
     }
 

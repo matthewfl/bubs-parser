@@ -21,12 +21,13 @@
  */
 package edu.ohsu.cslu.parser.chart;
 
-import java.util.LinkedList;
-import java.util.List;
-
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.Parser;
+import org.apache.commons.lang.NotImplementedException;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class EdgeCellChart extends CellChart {
 
@@ -77,16 +78,17 @@ public class EdgeCellChart extends CellChart {
 
         public List<ChartEdge> getEdges() {
             final List<ChartEdge> edges = new LinkedList<ChartEdge>();
-            for (int i = 0; i < bestEdge.length; i++) {
-                if (bestEdge[i] != null) {
-                    edges.add(bestEdge[i]);
+            for (int i = 0; i < bestEdge.length(); i++) {
+                ChartEdge e = bestEdge.get(i);
+                if (e != null) {
+                    edges.add(e);
                 }
             }
             return edges;
         }
 
         public boolean hasEdge(final ChartEdge edge) {
-            final ChartEdge curEdge = bestEdge[edge.prod.parent];
+            final ChartEdge curEdge = bestEdge.get(edge.prod.parent);
             if (curEdge == null)
                 return false;
             if (!curEdge.prod.equals(edge.prod))
@@ -102,27 +104,31 @@ public class EdgeCellChart extends CellChart {
             // assuming bestEdge[parent] == null
             final int parent = edge.prod.parent;
             numEdgesAdded++;
-            bestEdge[parent] = edge;
-            if (isLexCell && grammar.isPos((short) parent)) {
-                // posNTs.addLast(parent);
-                posNTs.add(parent);
-            }
-            return true;
+
+            throw new NotImplementedException();
+            //bestEdge[parent] = edge;
+
+//            if (isLexCell && grammar.isPos((short) parent)) {
+//                // posNTs.addLast(parent);
+//                posNTs.add(parent);
+//            }
+//            return true;
         }
 
         // @Override
         public boolean addEdge(final ChartEdge edge, final float insideProb) {
             // public void addEdge(final ChartEdge edge, final float insideProb) {
             final int parent = edge.prod.parent;
-            final ChartEdge prevBestEdge = bestEdge[parent];
+            final ChartEdge prevBestEdge = bestEdge.get(parent);
             numEdgesConsidered++;
 
             if (prevBestEdge == null) {
                 return insertNewEdge(edge);
                 // insertNewEdge(edge);
             } else if (insideProb > getInside(parent)) {
-                bestEdge[parent] = edge;
-                return true;
+                throw new NotImplementedException();
+//                bestEdge[parent] = edge;
+//                return true;
             }
 
             return false;
@@ -143,7 +149,7 @@ public class EdgeCellChart extends CellChart {
         public boolean addEdge(final Production p, final ChartCell leftCell, final ChartCell rightCell,
                 final float insideProb) {
             final int parent = p.parent;
-            final ChartEdge prevBestEdge = bestEdge[parent];
+            final ChartEdge prevBestEdge = bestEdge.get(parent);
             numEdgesConsidered++;
 
             // System.out.println("Considering: " + new ChartEdge(p, leftCell, rightCell, insideProb));
@@ -163,14 +169,15 @@ public class EdgeCellChart extends CellChart {
 
         public boolean addEdgeForceOverwrite(final ChartEdge edge) {
             final int parent = edge.prod.parent;
-            final ChartEdge prevBestEdge = bestEdge[parent];
+            final ChartEdge prevBestEdge = bestEdge.get(parent);
             numEdgesConsidered++;
 
             if (prevBestEdge == null) {
                 return insertNewEdge(edge);
             }
-            bestEdge[parent] = edge;
-            return false;
+            throw new NotImplementedException();
+//            bestEdge[parent] = edge;
+//            return false;
         }
 
         public boolean canBuild(final ChartEdge edge) {

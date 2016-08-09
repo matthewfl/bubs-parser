@@ -703,6 +703,7 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
                 try {
                     return getLocal().parseSentence(input, recoveryStrategy);
                 } catch (final Exception e) {
+                    e.printStackTrace();
                     BaseLogger.singleton().log(Level.SEVERE, e.toString());
                     return null;
                 }

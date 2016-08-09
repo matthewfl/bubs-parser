@@ -21,17 +21,17 @@
  */
 package edu.ohsu.cslu.parser.chart;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-
 import edu.ohsu.cslu.grammar.Grammar;
 import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
-import edu.ohsu.cslu.parser.Util;
+import org.apache.commons.lang.NotImplementedException;
+
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class CellChart extends Chart {
 
@@ -104,8 +104,9 @@ public class CellChart extends Chart {
         protected boolean isLexCell;
 
         // NB: why do we have bestEdge AND inside? These could get out of sync...
-        public ChartEdge[] bestEdge;
-        public float[] inside;
+        //public ChartEdge[] bestEdge;
+        public AtomicReferenceArray<ChartEdge> bestEdge;
+        //public float[] inside;
         protected HashSet<Integer> childNTs = new HashSet<Integer>();
         protected HashSet<Integer> leftChildNTs = new HashSet<Integer>();
         protected HashSet<Integer> rightChildNTs = new HashSet<Integer>();
@@ -120,28 +121,34 @@ public class CellChart extends Chart {
                 isLexCell = false;
             }
 
-            bestEdge = new ChartEdge[grammar.numNonTerms()];
-            inside = new float[grammar.numNonTerms()];
-            Arrays.fill(inside, Float.NEGATIVE_INFINITY);
+            bestEdge = new AtomicReferenceArray<ChartEdge>(grammar.numNonTerms());
+            //bestEdge = new ChartEdge[grammar.numNonTerms()];
+
+            //inside = new float[grammar.numNonTerms()];
+            //Arrays.fill(inside, Float.NEGATIVE_INFINITY);
         }
 
         @Override
         public float getInside(final int nt) {
-            return inside[nt];
+            ChartEdge e = bestEdge.get(nt);
+            return e == null ? Float.NEGATIVE_INFINITY : e.insideCachedValue;
+            //return inside[nt];
         }
 
         public void updateInside(final int nt, final float insideProb) {
-            if (viterbiMax) {
-                if (insideProb > inside[nt]) {
-                    inside[nt] = insideProb;
-                    addToHashSets(nt);
-                }
-            } else {
-                inside[nt] = (float) Util.logSum(inside[nt], insideProb);
-                addToHashSets(nt);
-            }
+            throw new NotImplementedException();
+            //            if (viterbiMax) {
+//                if (insideProb > inside[nt]) {
+//                    inside[nt] = insideProb;
+//                    addToHashSets(nt);
+//                }
+//            } else {
+//                inside[nt] = (float) Util.logSum(inside[nt], insideProb);
+//                addToHashSets(nt);
+//            }
         }
 
+        // this will just not have an exact count since it isn't being locked/using atomics
         private void updateCounts(final Production p) {
             if (p.isBinaryProd()) {
                 parseTask.nBinaryConsidered++;
@@ -159,20 +166,57 @@ public class CellChart extends Chart {
         public void updateInside(final Chart.ChartEdge edge) {
             final int nt = edge.prod.parent;
             final float insideProb = edge.inside();
+            boolean did_update = false;
+            ChartEdge old_edge;
+            ChartEdge new_edge = (ChartEdge)edge;
+            new_edge.insideCachedValue = edge.inside();
             if (viterbiMax && insideProb > getInside(nt)) {
-                bestEdge[nt] = (ChartEdge) edge;
+                while (true) {
+                    old_edge = bestEdge.get(nt);
+                    if (!(old_edge == null || old_edge.inside() < insideProb)) {
+                        break;
+                    }
+                    if (bestEdge.weakCompareAndSet(nt, old_edge, new_edge)) {
+                        did_update = true;
+                        break;
+                    }
+                }
+                //bestEdge[nt] = (ChartEdge) edge;
             }
-            updateInside(nt, insideProb);
+            if(did_update)
+                addToHashSets(nt);
+            //updateInside(nt, insideProb);
             updateCounts(edge.prod);
         }
 
         // unary edges
         public void updateInside(final Production p, final float insideProb) {
             final int nt = p.parent;
-            if (viterbiMax && insideProb > getInside(nt)) {
-                bestEdge[nt] = new ChartEdge(p, this);
+            boolean did_update = false;
+            ChartEdge old_edge, new_edge;
+            if(viterbiMax && insideProb > getInside(nt)) {
+                // there is a chance that we do the update
+                new_edge = new ChartEdge(p, this);
+                new_edge.insideCachedValue = new_edge.inside();
+                while (true) {
+                    old_edge = bestEdge.get(nt);
+                    if (!(old_edge == null || old_edge.inside() < insideProb)) {
+                        break;
+                    }
+                    if (bestEdge.weakCompareAndSet(nt, old_edge, new_edge)) {
+                        did_update = true;
+                        break;
+                    }
+                }
             }
-            updateInside(nt, insideProb);
+
+//            if (viterbiMax && insideProb > getInside(nt)) {
+//                throw new NotImplementedException();
+////                bestEdge[nt] = new ChartEdge(p, this);
+//            }
+            if(did_update)
+                addToHashSets(nt);
+            //updateInside(nt, insideProb);
             updateCounts(p);
         }
 
@@ -182,13 +226,14 @@ public class CellChart extends Chart {
                 final float insideProb) {
             final int nt = p.parent;
             if (viterbiMax && insideProb > getInside(nt)) {
-                if (bestEdge[nt] == null) {
-                    bestEdge[nt] = new ChartEdge(p, leftCell, rightCell);
-                } else {
-                    bestEdge[nt].prod = p;
-                    bestEdge[nt].leftCell = leftCell;
-                    bestEdge[nt].rightCell = rightCell;
-                }
+//                if (bestEdge[nt] == null) {
+//                    bestEdge[nt] = new ChartEdge(p, leftCell, rightCell);
+//                } else {
+//                    bestEdge[nt].prod = p;
+//                    bestEdge[nt].leftCell = leftCell;
+//                    bestEdge[nt].rightCell = rightCell;
+//                }
+                throw new NotImplementedException();
             }
             updateInside(nt, insideProb);
             updateCounts(p);
@@ -196,24 +241,26 @@ public class CellChart extends Chart {
 
         @Override
         public ChartEdge getBestEdge(final int nt) {
-            return bestEdge[nt];
+            return bestEdge.get(nt);
         }
 
         public List<ChartEdge> getBestEdgeList() {
             final List<ChartEdge> bestEdges = new LinkedList<ChartEdge>();
-            for (int i = 0; i < bestEdge.length; i++) {
-                if (bestEdge[i] != null) {
-                    bestEdges.add(bestEdge[i]);
+            for (int i = 0; i < bestEdge.length(); i++) {
+                ChartEdge e = bestEdge.get(i);
+                if (e != null) {
+                    bestEdges.add(e);
                 }
             }
             return bestEdges;
         }
 
         public boolean hasNT(final int nt) {
-            return inside[nt] > Float.NEGATIVE_INFINITY;
+            return bestEdge.get(nt) != null;
+//            return inside[nt] > Float.NEGATIVE_INFINITY;
         }
 
-        protected void addToHashSets(final int ntIndex) {
+        protected synchronized void addToHashSets(final int ntIndex) {
             childNTs.add(ntIndex);
             if (grammar.isLeftChild((short) ntIndex)) {
                 leftChildNTs.add(ntIndex);
@@ -226,8 +273,8 @@ public class CellChart extends Chart {
             }
         }
 
-        public HashSet<Integer> getNTs() {
-            return childNTs;
+        public synchronized HashSet<Integer> getNTs() {
+            return (HashSet<Integer>)childNTs.clone();
         }
 
         // TODO: this is called a lot but it is creating a new array for each call!
@@ -289,9 +336,10 @@ public class CellChart extends Chart {
             final StringBuilder sb = new StringBuilder(1024);
             sb.append(getClass().getName() + "[" + start() + "][" + end() + "] with " + getNumNTs() + " (of "
                     + grammar.numNonTerms() + ") edges");
-            for (int i = 0; i < bestEdge.length; i++) {
-                if (bestEdge[i] != null) {
-                    sb.append(bestEdge[i].toString());
+            for (int i = 0; i < bestEdge.length(); i++) {
+                ChartEdge e = bestEdge.get(i);
+                if (e != null) {
+                    sb.append(e.toString());
                     sb.append('\n');
                 }
             }

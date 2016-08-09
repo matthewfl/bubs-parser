@@ -29,6 +29,7 @@ import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import org.apache.commons.lang.NotImplementedException;
 
 /**
  * @author Nathan Bodenstab
@@ -74,14 +75,18 @@ public class APDecodeFOM extends APWithMemory {
             final float fomScore = edge.fom; // ** THE CHANGE **
 
             if (fomScore > cell.getInside(nt)) {
-                cell.bestEdge[nt] = edge;
-                cell.updateInside(nt, fomScore);
-                // if A->B C is added to chart but A->X Y was already in this chart cell, then the
-                // first edge must have been better than the current edge because we pull edges
-                // from the agenda best-first. This also means that the entire frontier
-                // has already been added.
-                expandFrontier(nt, edge.start(), edge.end());
-                nChartEdges += 1;
+
+                throw new NotImplementedException();
+                //cell.bestEdge[nt] = edge;
+
+
+//                cell.updateInside(nt, fomScore);
+//                // if A->B C is added to chart but A->X Y was already in this chart cell, then the
+//                // first edge must have been better than the current edge because we pull edges
+//                // from the agenda best-first. This also means that the entire frontier
+//                // has already been added.
+//                expandFrontier(nt, edge.start(), edge.end());
+//                nChartEdges += 1;
             }
         }
 

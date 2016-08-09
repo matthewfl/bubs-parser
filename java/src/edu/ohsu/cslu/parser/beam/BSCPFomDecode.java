@@ -21,9 +21,6 @@
  */
 package edu.ohsu.cslu.parser.beam;
 
-import java.util.Arrays;
-import java.util.PriorityQueue;
-
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.grammar.LeftHashGrammar;
 import edu.ohsu.cslu.grammar.Production;
@@ -34,6 +31,10 @@ import edu.ohsu.cslu.parser.Util;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import org.apache.commons.lang.NotImplementedException;
+
+import java.util.Arrays;
+import java.util.PriorityQueue;
 
 /**
  * @author Nathan Bodenstab
@@ -154,11 +155,12 @@ public class BSCPFomDecode extends BSCPPruneViterbi {
         // }
         // }
 
-        cell.bestEdge = maxcBackptr;
+        throw new NotImplementedException();
+//        cell.bestEdge = maxcBackptr;
 
-        if (collectDetailedStatistics) {
-            System.out.println(cell.width() + " [" + cell.start() + "," + cell.end() + "] #pop=" + cellPopped
-                    + " #push=" + cellPushed + " #considered=" + cellConsidered);
-        }
+//        if (collectDetailedStatistics) {
+//            System.out.println(cell.width() + " [" + cell.start() + "," + cell.end() + "] #pop=" + cellPopped
+//                    + " #push=" + cellPushed + " #considered=" + cellConsidered);
+//        }
     }
 }
