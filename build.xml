@@ -1,6 +1,11 @@
 <!-- $Id: build.xml 7582 2008-06-17 21:57:19Z chriso $ -->
 <project xmlns:ivy="antlib:org.apache.ivy.ant" name="bubs-parser" default="dist" basedir=".">
 
+    <target name="bootstrap" description="Used to install the ivy task jar">
+        <mkdir dir="${user.home}/.ant/lib"/>
+        <get dest="${user.home}/.ant/lib/ivy.jar" src="http://search.maven.org/remotecontent?filepath=org/apache/ivy/ivy/2.2.0/ivy-2.2.0.jar"/>
+    </target>
+
     <property name="version" value="1.1" />
 
     <property name="dir.build" location="build" />

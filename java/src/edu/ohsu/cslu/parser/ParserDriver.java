@@ -21,58 +21,16 @@
  */
 package edu.ohsu.cslu.parser;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Reader;
-import java.lang.reflect.Constructor;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.FutureTask;
-import java.util.logging.Level;
-
-import cltool4j.BaseLogger;
-import cltool4j.ConfigProperties;
-import cltool4j.GlobalConfigProperties;
-import cltool4j.ThreadLocalLinewiseClTool;
-import cltool4j.Threadable;
+import cltool4j.*;
 import cltool4j.args4j.Option;
 import edu.ohsu.cslu.datastructs.narytree.CharniakHeadPercolationRuleset;
 import edu.ohsu.cslu.datastructs.narytree.HeadPercolationRuleset;
-import edu.ohsu.cslu.grammar.ChildMatrixGrammar;
-import edu.ohsu.cslu.grammar.ClusterTaggerTokenClassifier;
-import edu.ohsu.cslu.grammar.CoarseGrammar;
-import edu.ohsu.cslu.grammar.CsrSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
-import edu.ohsu.cslu.grammar.Grammar;
-import edu.ohsu.cslu.grammar.InsideOutsideCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.LeftCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.LeftHashGrammar;
-import edu.ohsu.cslu.grammar.LeftListGrammar;
-import edu.ohsu.cslu.grammar.LeftRightListsGrammar;
-import edu.ohsu.cslu.grammar.ListGrammar;
-import edu.ohsu.cslu.grammar.RightCscSparseMatrixGrammar;
-import edu.ohsu.cslu.grammar.SerializeModel;
-import edu.ohsu.cslu.grammar.SparseMatrixGrammar;
+import edu.ohsu.cslu.grammar.*;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.Int2IntHashPackingFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.LeftShiftFunction;
 import edu.ohsu.cslu.grammar.SparseMatrixGrammar.PerfectIntPairHashPackingFunction;
-import edu.ohsu.cslu.grammar.TokenClassifier;
-import edu.ohsu.cslu.parser.Parser.DecodeMethod;
-import edu.ohsu.cslu.parser.Parser.InputFormat;
-import edu.ohsu.cslu.parser.Parser.ParserType;
-import edu.ohsu.cslu.parser.Parser.ReparseStrategy;
-import edu.ohsu.cslu.parser.Parser.ResearchParserType;
-import edu.ohsu.cslu.parser.cellselector.AdaptiveBeamModel;
-import edu.ohsu.cslu.parser.cellselector.CellSelectorModel;
-import edu.ohsu.cslu.parser.cellselector.CompleteClosureModel;
-import edu.ohsu.cslu.parser.cellselector.LeftRightBottomTopTraversal;
-import edu.ohsu.cslu.parser.cellselector.LimitedSpanTraversalModel;
-import edu.ohsu.cslu.parser.cellselector.OHSUCellConstraintsModel;
-import edu.ohsu.cslu.parser.cellselector.PerceptronBeamWidthModel;
+import edu.ohsu.cslu.parser.Parser.*;
+import edu.ohsu.cslu.parser.cellselector.*;
 import edu.ohsu.cslu.parser.chart.Chart.RecoveryStrategy;
 import edu.ohsu.cslu.parser.fom.BoundaryLex;
 import edu.ohsu.cslu.parser.fom.BoundaryPosModel;
@@ -86,6 +44,16 @@ import edu.ohsu.cslu.perceptron.AdaptiveBeamClassifier;
 import edu.ohsu.cslu.perceptron.CompleteClosureClassifier;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
+
+import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+import java.util.logging.Level;
 
 /**
  * BUBS Parser
@@ -714,8 +682,12 @@ public class ParserDriver extends ThreadLocalLinewiseClTool<Parser<?>, ParseTask
             }
             return parser;
 
-        } catch (final Exception e) {
-            throw new IllegalArgumentException("Unsupported parser type: " + e.toString());
+        }  catch(InvocationTargetException e) {
+            e.getTargetException().printStackTrace();
+            throw new IllegalArgumentException("Unsupported parser type: " + e.toString(), e);
+        }
+        catch (final Exception e) {
+            throw new IllegalArgumentException("Unsupported parser type: " + e.toString(), e);
         }
     }
 
