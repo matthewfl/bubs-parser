@@ -21,8 +21,6 @@
  */
 package edu.ohsu.cslu.parser.agenda;
 
-import java.util.PriorityQueue;
-
 import cltool4j.BaseLogger;
 import cltool4j.GlobalConfigProperties;
 import edu.ohsu.cslu.datastructs.narytree.BinaryTree;
@@ -34,13 +32,23 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
+import edu.rice.hj.api.HjSuspendable;
+import edu.rice.hj.api.SuspendableException;
+
+import java.util.Iterator;
+import java.util.concurrent.PriorityBlockingQueue;
+
+import static edu.rice.hj.Module0.finish;
+import static edu.rice.hj.Module1.async;
+
 
 /**
  * @author Nathan Bodenstab
  */
 public class AgendaParser extends Parser<LeftRightListsGrammar> {
 
-    protected PriorityQueue<ChartEdge> agenda;
+//    protected PriorityQueue<ChartEdge> agenda;
+    protected PriorityBlockingQueue<ChartEdge> agenda;
     public CellChart chart;
     protected int nAgendaPush, nAgendaPop, nChartEdges;
     float overParseTune = GlobalConfigProperties.singleton().getFloatProperty("overParseTune");
@@ -52,56 +60,132 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
     protected void initParser(final ParseTask parseTask) {
         chart = new CellChart(parseTask, this);
 
-        agenda = new PriorityQueue<ChartEdge>();
+//        agenda = new PriorityQueue<ChartEdge>();
+        agenda = new PriorityBlockingQueue<>();
         nAgendaPush = nAgendaPop = nChartEdges = 0;
     }
 
     @Override
     public BinaryTree<String> findBestParse(final ParseTask parseTask) {
-        ChartEdge edge;
-        HashSetChartCell cell;
+//        ChartEdge edge;
+//        HashSetChartCell cell;
 
         initParser(parseTask);
         addLexicalProductions(parseTask.tokens);
         figureOfMerit.initSentence(parseTask, chart);
 
         for (int i = 0; i < parseTask.sentenceLength(); i++) {
-            cell = chart.getCell(i, i + 1);
+            HashSetChartCell cell = chart.getCell(i, i + 1);
             for (final int nt : cell.getPosNTs()) {
                 expandFrontier(nt, i, i + 1);
             }
         }
 
-        boolean doneParsing = false;
-        int targetNumPops = -1;
-        while (!agenda.isEmpty() && !doneParsing) {
-            edge = agenda.poll(); // get and remove top agenda edge
-            nAgendaPop += 1;
-            if (collectDetailedStatistics) {
-                BaseLogger.singleton().finer("Popping: " + edge.toString());
+        class Objp {
+            boolean doneParsing = false;
+            int targetNumPops = -1;
+        }
+
+        Objp objp = new Objp();
+
+//        boolean doneParsing = false;
+//        int targetNumPops = -1;
+//        while (!agenda.isEmpty() && !doneParsing) {
+//            edge = agenda.poll(); // get and remove top agenda edge
+//            nAgendaPop += 1;
+//            if (collectDetailedStatistics) {
+//                BaseLogger.singleton().finer("Popping: " + edge.toString());
+//            }
+//
+//            cell = chart.getCell(edge.start(), edge.end());
+//            final int nt = edge.prod.parent;
+//            if (edge.inside() > cell.getInside(nt)) {
+//
+//                cell.updateInside(edge);
+//                // if A->B C is added to chart but A->X Y was already in this chart cell, then the
+//                // first edge must have been better than the current edge because we pull edges
+//                // from the agenda best-first. This also means that the entire frontier
+//                // has already been added.
+//                expandFrontier(nt, edge.start(), edge.end());
+//                nChartEdges += 1;
+//            }
+//
+//            if (chart.hasCompleteParse(grammar.startSymbol)) {
+//                if (targetNumPops < 0) {
+//                    targetNumPops = (int) (nAgendaPop * overParseTune);
+//                }
+//                if (nAgendaPop >= targetNumPops) {
+//                    doneParsing = true;
+//                }
+//            }
+//        }
+
+        // iterator which will pull elements out of the queue in order
+        Iterator<ChartEdge> agendaIterator = new Iterator<ChartEdge>() {
+            @Override
+            public boolean hasNext() {
+                return !objp.doneParsing;
             }
 
-            cell = chart.getCell(edge.start(), edge.end());
-            final int nt = edge.prod.parent;
-            if (edge.inside() > cell.getInside(nt)) {
-
-                cell.updateInside(edge);
-                // if A->B C is added to chart but A->X Y was already in this chart cell, then the
-                // first edge must have been better than the current edge because we pull edges
-                // from the agenda best-first. This also means that the entire frontier
-                // has already been added.
-                expandFrontier(nt, edge.start(), edge.end());
-                nChartEdges += 1;
-            }
-
-            if (chart.hasCompleteParse(grammar.startSymbol)) {
-                if (targetNumPops < 0) {
-                    targetNumPops = (int) (nAgendaPop * overParseTune);
+            @Override
+            public ChartEdge next() {
+                // this blocks until there is something in the queue to work on
+                try {
+                    return agenda.take();
+                } catch(InterruptedException e) {
+                    throw new RuntimeException(e);
                 }
-                if (nAgendaPop >= targetNumPops) {
-                    doneParsing = true;
-                }
             }
+        };
+
+        Iterable<ChartEdge> agendaIterable = new Iterable<ChartEdge>() {
+            @Override
+            public Iterator<ChartEdge> iterator() {
+                return agendaIterator;
+            }
+        };
+
+        try {
+            finish(() -> {
+                //forall(agendaIterable, (ChartEdge edge) -> {
+//                while(true) {
+                    while (agendaIterator.hasNext()) {
+                        async(new HjSuspendable() {
+                            @Override
+                            public void run() throws SuspendableException {
+                                nAgendaPop += 1;
+                                if (collectDetailedStatistics) {
+                                    BaseLogger.singleton().finer("Popping: " + edge.toString());
+                                }
+                                HashSetChartCell cell = chart.getCell(edge.start(), edge.end());
+                                final int nt = edge.prod.parent;
+                                if (edge.inside() > cell.getInside(nt)) {
+                                    cell.updateInside(edge);
+                                    expandFrontier(nt, edge.start(), edge.end());
+                                    nChartEdges += 1;
+                                }
+
+                                if (objp.targetNumPops < 0 && chart.hasCompleteParse(grammar.startSymbol)) {
+                                    objp.targetNumPops = (int) (nAgendaPop * overParseTune);
+                                }
+                                if (objp.targetNumPops > 0 && nAgendaPop >= objp.targetNumPops)
+                                    objp.doneParsing = true;
+                            }
+
+                            private ChartEdge edge = agendaIterator.next();
+                        });
+//                    }
+//                    //});
+//                    if(objp.doneParsing)
+//                        break;
+//                    // HACK: habanero doesn't support only doing partial polling from an iterator (eg has to consume it all)
+//                    // also, many other threads haven't started running by this point, so it runs out of items to submit
+//                    // to async, this lets the other threads run and will come back and check later, prob about ~20ms
+//                    Thread.yield();
+                }
+            });
+        } catch(SuspendableException e) {
+            throw new RuntimeException(e);
         }
 
         if (agenda.isEmpty()) {
