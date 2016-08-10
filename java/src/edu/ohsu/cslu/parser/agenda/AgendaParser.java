@@ -150,38 +150,39 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
                 //forall(agendaIterable, (ChartEdge edge) -> {
 //                while(true) {
                     while (agendaIterator.hasNext()) {
-                        async(new HjSuspendable() {
-                            @Override
-                            public void run() throws SuspendableException {
-                                nAgendaPop += 1;
-                                if (collectDetailedStatistics) {
-                                    BaseLogger.singleton().finer("Popping: " + edge.toString());
-                                }
-                                HashSetChartCell cell = chart.getCell(edge.start(), edge.end());
-                                final int nt = edge.prod.parent;
-                                if (edge.inside() > cell.getInside(nt)) {
-                                    cell.updateInside(edge);
-                                    expandFrontier(nt, edge.start(), edge.end());
-                                    nChartEdges += 1;
-                                }
+                        // this is a "hack" to make it sorta support the order of the queue by limiting the number of tasks
+                        // that it is going to end up creating
+                        finish(() -> {
+                            for(int i = 0; i < 100 && agendaIterator.hasNext(); i++) {
+                                async(new HjSuspendable() {
+                                    @Override
+                                    public void run() throws SuspendableException {
+                                        nAgendaPop += 1;
+                                        if (collectDetailedStatistics) {
+                                            BaseLogger.singleton().finer("Popping: " + edge.toString());
+                                        }
+                                        HashSetChartCell cell = chart.getCell(edge.start(), edge.end());
+                                        final int nt = edge.prod.parent;
+                                        if (edge.inside() > cell.getInside(nt)) {
+                                            cell.updateInside(edge);
+                                            expandFrontier(nt, edge.start(), edge.end());
+                                            nChartEdges += 1;
+                                        }
 
-                                if (objp.targetNumPops < 0 && chart.hasCompleteParse(grammar.startSymbol)) {
-                                    objp.targetNumPops = (int) (nAgendaPop * overParseTune);
-                                }
-                                if (objp.targetNumPops > 0 && nAgendaPop >= objp.targetNumPops)
-                                    objp.doneParsing = true;
+                                        if (objp.targetNumPops < 0 && chart.hasCompleteParse(grammar.startSymbol)) {
+                                            objp.targetNumPops = (int) (nAgendaPop * overParseTune);
+                                        }
+                                        if (objp.targetNumPops > 0 && nAgendaPop >= objp.targetNumPops)
+                                            objp.doneParsing = true;
+                                    }
+
+                                    private ChartEdge edge = agendaIterator.next();
+                                });
+
                             }
-
-                            private ChartEdge edge = agendaIterator.next();
                         });
 //                    }
 //                    //});
-//                    if(objp.doneParsing)
-//                        break;
-//                    // HACK: habanero doesn't support only doing partial polling from an iterator (eg has to consume it all)
-//                    // also, many other threads haven't started running by this point, so it runs out of items to submit
-//                    // to async, this lets the other threads run and will come back and check later, prob about ~20ms
-//                    Thread.yield();
                 }
             });
         } catch(SuspendableException e) {
