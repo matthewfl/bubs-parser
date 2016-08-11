@@ -32,14 +32,14 @@ import edu.ohsu.cslu.parser.ParserDriver;
 import edu.ohsu.cslu.parser.chart.CellChart;
 import edu.ohsu.cslu.parser.chart.CellChart.ChartEdge;
 import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
-import edu.rice.hj.api.HjSuspendable;
+import edu.rice.hj.api.HjSuspendingCallable;
+import edu.rice.hj.api.HjSuspendingProcedure;
 import edu.rice.hj.api.SuspendableException;
 
 import java.util.Iterator;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import static edu.rice.hj.Module0.finish;
-import static edu.rice.hj.Module1.async;
 
 
 /**
@@ -145,47 +145,68 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
             }
         };
 
+        HjSuspendingCallable<ChartEdge> agendaIteratorCallable = new HjSuspendingCallable<ChartEdge>() {
+            @Override
+            public ChartEdge call() throws SuspendableException {
+                if(agendaIterator.hasNext())
+                    return agendaIterator.next();
+                return null;
+            }
+        };
+
+        HjSuspendingProcedure<ChartEdge> agendaRunner = new HjSuspendingProcedure<ChartEdge>() {
+            @Override
+            public void apply(ChartEdge edge) throws SuspendableException {
+                nAgendaPop += 1;
+                if (collectDetailedStatistics) {
+                    BaseLogger.singleton().finer("Popping: " + edge.toString());
+                }
+                HashSetChartCell cell = chart.getCell(edge.start(), edge.end());
+                final int nt = edge.prod.parent;
+                if (edge.inside() > cell.getInside(nt)) {
+                    cell.updateInside(edge);
+                    expandFrontier(nt, edge.start(), edge.end());
+                    nChartEdges += 1;
+                }
+
+                if (objp.targetNumPops < 0 && chart.hasCompleteParse(grammar.startSymbol)) {
+                    objp.targetNumPops = (int) (nAgendaPop * overParseTune);
+                }
+                if (objp.targetNumPops > 0 && nAgendaPop >= objp.targetNumPops)
+                    objp.doneParsing = true;
+            }
+        };
+
         try {
             finish(() -> {
-                //forall(agendaIterable, (ChartEdge edge) -> {
-//                while(true) {
-                    while (agendaIterator.hasNext()) {
-                        // this is a "hack" to make it sorta support the order of the queue by limiting the number of tasks
-                        // that it is going to end up creating
-                        finish(() -> {
-                            for(int i = 0; i < 100 && agendaIterator.hasNext(); i++) {
-                                HjSuspendable runnable = new HjSuspendable() {
-                                    @Override
-                                    public void run() throws SuspendableException {
-                                        nAgendaPop += 1;
-                                        if (collectDetailedStatistics) {
-                                            BaseLogger.singleton().finer("Popping: " + edge.toString());
-                                        }
-                                        HashSetChartCell cell = chart.getCell(edge.start(), edge.end());
-                                        final int nt = edge.prod.parent;
-                                        if (edge.inside() > cell.getInside(nt)) {
-                                            cell.updateInside(edge);
-                                            expandFrontier(nt, edge.start(), edge.end());
-                                            nChartEdges += 1;
-                                        }
-
-                                        if (objp.targetNumPops < 0 && chart.hasCompleteParse(grammar.startSymbol)) {
-                                            objp.targetNumPops = (int) (nAgendaPop * overParseTune);
-                                        }
-                                        if (objp.targetNumPops > 0 && nAgendaPop >= objp.targetNumPops)
-                                            objp.doneParsing = true;
-                                    }
-                                    private ChartEdge edge = agendaIterator.next();
-                                };
-//                                runnable.run();
-                                async(runnable);
-
-                            }
-                        });
-//                    }
-//                    //});
-                }
+                omfg.HabaneroExtra.forasyncItems(4, agendaIteratorCallable, agendaRunner);
             });
+
+//            finish(() -> {
+//                //forall(agendaIterable, (ChartEdge edge) -> {
+////                while(true) {
+//                omfg.HabaneroExtra.forasyncItems(4, agendaIteratorCallable, );
+//                    while (agendaIterator.hasNext()) {
+//                        // this is a "hack" to make it sorta support the order of the queue by limiting the number of tasks
+//                        // that it is going to end upforasyncItems creating
+//                        finish(() -> {
+//                            for(int i = 0; i < 100 && agendaIterator.hasNext(); i++) {
+//                                HjSuspendable runnable = new HjSuspendable() {
+//                                    @Override
+//                                    public void run() throws SuspendableException {
+//
+//                                    }
+//                                    private ChartEdge edge = agendaIterator.next();
+//                                };
+////                                runnable.run();
+//                                async(runnable);
+//
+//                            }
+//                        });
+////                    }
+////                    //});
+//                }
+//            });
         } catch(SuspendableException e) {
             throw new RuntimeException(e);
         }
