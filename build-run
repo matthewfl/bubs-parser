@@ -1,0 +1,17 @@
+#!/bin/bash
+
+USER=mf40
+
+ant -f bubs-parser-habanero.xml all
+# fix issue with jar having a bad signature
+zip -d out/artifacts/bubs_parser_jar/bubs-parser.jar 'META-INF/*.SF' 'META-INF/*.RSA'
+
+java -cp out/artifacts/bubs_parser_jar/bubs-parser.jar edu.ohsu.cslu.parser.ParserDriver
+
+mkdir -p running
+cp out/artifacts/bubs_parser_jar/bubs-parser.jar running/
+cp models/wsj_l0mm_16_.55_6.gr.gz running/
+
+#java -Xmx6000m -server -cp bubs-parser.jar edu.ohsu.cslu.parser.ParserDriver -p Agenda -xt 1 -g wsj_l0mm_16_.55_6.gr.gz -if Tree -O overParseTune=1.00001 parse.22.sl.small.mrg
+
+rsync -avz --progress --partial running/ $USER@davinci.rice.edu:~/

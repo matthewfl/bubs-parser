@@ -26,12 +26,12 @@ import edu.ohsu.cslu.grammar.Production;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Parser.DecodeMethod;
+import omfg.AlternateAtomicReferenceArray;
 import org.apache.commons.lang.NotImplementedException;
 
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class CellChart extends Chart {
 
@@ -115,7 +115,8 @@ public class CellChart extends Chart {
 
         // NB: why do we have bestEdge AND inside? These could get out of sync...
         //public ChartEdge[] bestEdge;
-        public AtomicReferenceArray<ChartEdge> bestEdge;
+//        public AtomicReferenceArray<ChartEdge> bestEdge;
+        public AlternateAtomicReferenceArray<ChartEdge> bestEdge;
         //public float[] inside;
         protected HashSet<Integer> childNTs = new HashSet<Integer>();
         protected HashSet<Integer> leftChildNTs = new HashSet<Integer>();
@@ -131,7 +132,7 @@ public class CellChart extends Chart {
                 isLexCell = false;
             }
 
-            bestEdge = new AtomicReferenceArray<ChartEdge>(grammar.numNonTerms());
+            bestEdge = new AlternateAtomicReferenceArray<ChartEdge>(grammar.numNonTerms());
             //bestEdge = new ChartEdge[grammar.numNonTerms()];
 
             //inside = new float[grammar.numNonTerms()];

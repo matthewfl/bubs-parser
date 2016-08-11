@@ -154,7 +154,7 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
                         // that it is going to end up creating
                         finish(() -> {
                             for(int i = 0; i < 100 && agendaIterator.hasNext(); i++) {
-                                async(new HjSuspendable() {
+                                HjSuspendable runnable = new HjSuspendable() {
                                     @Override
                                     public void run() throws SuspendableException {
                                         nAgendaPop += 1;
@@ -175,9 +175,10 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
                                         if (objp.targetNumPops > 0 && nAgendaPop >= objp.targetNumPops)
                                             objp.doneParsing = true;
                                     }
-
                                     private ChartEdge edge = agendaIterator.next();
-                                });
+                                };
+//                                runnable.run();
+                                async(runnable);
 
                             }
                         });
@@ -192,6 +193,8 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
         if (agenda.isEmpty()) {
             BaseLogger.singleton().info("WARNING: Agenda is empty.  All edges have been added to chart.");
         }
+
+        System.out.print(getStats() + "\t");
 
         return chart.extractBestParse(grammar.startSymbol);
     }
