@@ -35,12 +35,13 @@ import edu.ohsu.cslu.parser.chart.CellChart.HashSetChartCell;
 import edu.rice.hj.api.HjSuspendingCallable;
 import edu.rice.hj.api.HjSuspendingProcedure;
 import edu.rice.hj.api.SuspendableException;
+import edu.rice.hj.runtime.config.HjSystemProperty;
+
 
 import java.util.Iterator;
 import java.util.concurrent.PriorityBlockingQueue;
 
 import static edu.rice.hj.Module0.finish;
-
 
 /**
  * @author Nathan Bodenstab
@@ -176,10 +177,10 @@ public class AgendaParser extends Parser<LeftRightListsGrammar> {
                     objp.doneParsing = true;
             }
         };
-
+        final int numTasks = Integer.valueOf(System.getProperty("hj.numWorkers"));
         try {
             finish(() -> {
-                omfg.HabaneroExtra.forasyncItems(4, agendaIteratorCallable, agendaRunner);
+                omfg.HabaneroExtra.forasyncItems(numTasks, agendaIteratorCallable, agendaRunner);
             });
 
 //            finish(() -> {

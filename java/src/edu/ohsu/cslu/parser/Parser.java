@@ -69,6 +69,8 @@ import edu.ohsu.cslu.parser.spmv.CsrSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCscSpmvParser;
 import edu.ohsu.cslu.parser.spmv.GrammarParallelCsrSpmvParser;
 
+import static edu.rice.hj.Module0.launchHabaneroApp;
+
 /**
  * Implements common data structures and operations shared by all parser implementations. Child classes implement
  * including various context-free parsing methods, including exhaustive and pruned CYK algorithms and several forms of
@@ -194,9 +196,9 @@ public abstract class Parser<G extends Grammar> {
                             + opts.maxLength + ")");
         } else {
             task.startTime();
-
-            task.binaryParse = findBestParse(task);
-
+            launchHabaneroApp(()-> {
+                        task.binaryParse = findBestParse(task);
+            });
             task.stopTime();
             task.insideProbability = getInside(0, task.sentenceLength(), grammar.startSymbol);
             task.chartStats = getStats();
