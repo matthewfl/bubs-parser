@@ -21,29 +21,31 @@
  */
 package edu.ohsu.cslu.parser.chart;
 
-import java.util.Arrays;
-
 import cltool4j.BaseLogger;
 import edu.ohsu.cslu.parser.ParseTask;
 import edu.ohsu.cslu.parser.Parser;
 import edu.ohsu.cslu.parser.Util;
+import org.apache.commons.lang.NotImplementedException;
+
+import java.util.Arrays;
 
 public class InOutCellChart extends CellChart {
 
     public InOutCellChart(final ParseTask parseTask, final Parser<?> parser) {
         super(parseTask, parser);
 
-        chart = new ChartCell[size][size + 1];
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end < size + 1; end++) {
-                chart[start][end] = new ChartCell((short) start, (short) end);
-            }
-        }
+        throw new NotImplementedException();
+//        chart = new ChartCell[size][size + 1];
+//        for (int start = 0; start < size; start++) {
+//            for (int end = start + 1; end < size + 1; end++) {
+//                chart[start][end] = new ChartCell((short) start, (short) end);
+//            }
+//        }
     }
 
     @Override
     public ChartCell getCell(final int start, final int end) {
-        return (ChartCell) chart[start][end];
+        return (ChartCell) super.getCell(start,end);//chart[start][end];
     }
 
     @Override

@@ -41,22 +41,24 @@ public class EdgeCellChart extends CellChart {
         this.viterbiMax = true;
         this.parser = parser;
 
-        chart = new ChartCell[size][size + 1];
-        for (int start = 0; start < size; start++) {
-            for (int end = start + 1; end < size + 1; end++) {
-                chart[start][end] = new ChartCell((short) start, (short) end);
-            }
-        }
+        throw new NotImplementedException();
+//        chart = new ChartCell[size][size + 1];
+//        for (int start = 0; start < size; start++) {
+//            for (int end = start + 1; end < size + 1; end++) {
+//                setCell(start,end, new ChartCell((short) start, (short) end));
+//            }
+//        }
     }
 
     @Override
     public ChartCell getCell(final int start, final int end) {
-        return (ChartCell) chart[start][end];
+        return (ChartCell) super.getCell(start,end); //chart[start][end];
     }
 
     @Override
     public ChartCell getRootCell() {
-        return (ChartCell) chart[0][size];
+        throw new NotImplementedException();
+//        return (ChartCell) chart[0][size];
     }
 
     @Override

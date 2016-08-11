@@ -36,7 +36,9 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 public class CellChart extends Chart {
 
     protected Parser<? extends Grammar> parser;
-    protected HashSetChartCell chart[][];
+    //protected HashSetChartCell chart[][];
+    protected HashSetChartCell chart[];
+    protected int parseTaskSentenceLength;
     protected boolean viterbiMax;
 
     protected CellChart() {
@@ -47,7 +49,9 @@ public class CellChart extends Chart {
         super(parseTask, parser.grammar);
         this.parser = parser;
         this.viterbiMax = (parser.opts.decodeMethod == DecodeMethod.ViterbiMax);
-        chart = new HashSetChartCell[parseTask.sentenceLength()][parseTask.sentenceLength() + 1];
+//        chart = new HashSetChartCell[parseTask.sentenceLength()][parseTask.sentenceLength() + 1];
+        parseTaskSentenceLength = parseTask.sentenceLength();
+        chart = new HashSetChartCell[parseTaskSentenceLength * (parseTaskSentenceLength + 1)];
         reset(parseTask);
     }
 
@@ -57,14 +61,20 @@ public class CellChart extends Chart {
         final int n = parseTask.sentenceLength();
         for (int start = 0; start < n; start++) {
             for (int end = start + 1; end < n + 1; end++) {
-                chart[start][end] = new HashSetChartCell(start, end);
+                setCell(start,end, new HashSetChartCell(start, end));
             }
         }
     }
 
     @Override
     public HashSetChartCell getCell(final int start, final int end) {
-        return chart[start][end];
+//        return chart[start][end];
+        return chart[start + end * parseTaskSentenceLength];
+    }
+
+    protected void setCell(final int start, final int end, HashSetChartCell e) {
+//        chart[start][end] = e;
+        chart[start + end * parseTaskSentenceLength] = e;
     }
 
     @Override
