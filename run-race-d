@@ -1,0 +1,5 @@
+mkdir /tmp/rr-test
+cd /tmp/rr-test
+jar -xfv /home/matthew/Downloads/bubs-parser/running/bubs-parser.jar
+
+java -javaagent:/home/matthew/Downloads/RoadRunner/build/jar/rragent.jar -Xmx6000M -server -Xbootclasspath/p:/home/matthew/Downloads/RoadRunner/build/jar/RoadRunner.jar:/home/matthew/Downloads/RoadRunner/jars/java-cup-11a.jar rr.RRMain -toolpath= -maxTid=80 -maxWarn=20 -quiet edu.ohsu.cslu.parser.ParserDriver -p Agenda -xt 1 -g ~/Downloads/bubs-parser/models/wsj_l0mm_16_.55_6.gr.gz -if Tree -O overParseTune=1.00001 /home/matthew/Downloads/parse.22.sl.small.mrg

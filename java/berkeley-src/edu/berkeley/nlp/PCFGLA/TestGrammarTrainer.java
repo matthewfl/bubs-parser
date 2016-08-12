@@ -19,30 +19,8 @@
 
 package edu.berkeley.nlp.PCFGLA;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.floats.FloatList;
-
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.zip.GZIPInputStream;
-
-import org.cjunit.DetailedTest;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import cltool4j.BaseCommandlineTool;
 import cltool4j.GlobalConfigProperties;
 import cltool4j.ToolTestCase;
-import edu.berkeley.nlp.util.Numberer;
 import edu.ohsu.cslu.datastructs.narytree.NaryTree;
 import edu.ohsu.cslu.grammar.DecisionTreeTokenClassifier;
 import edu.ohsu.cslu.grammar.Grammar;
@@ -56,6 +34,19 @@ import edu.ohsu.cslu.parser.ml.CartesianProductHashSpmlParser;
 import edu.ohsu.cslu.tests.JUnit;
 import edu.ohsu.cslu.util.Evalb.BracketEvaluator;
 import edu.ohsu.cslu.util.Evalb.EvalbResult;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.floats.FloatList;
+import org.apache.commons.lang.NotImplementedException;
+import org.cjunit.DetailedTest;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Integration tests for {@link GrammarTrainer}
@@ -315,7 +306,7 @@ public class TestGrammarTrainer extends ToolTestCase {
             if (context.binaryParse != null) {
                 evaluator.evaluate(goldTree, context.binaryParse.unfactor(cscGrammar.grammarFormat));
             }
-            BaseCommandlineTool.progressBar(25, 500, tree++);
+//            BaseCommandlineTool.progressBar(25, 500, tree++);
         }
 
         // Evaluate the result and compare to the best previous score
@@ -340,54 +331,56 @@ public class TestGrammarTrainer extends ToolTestCase {
     private byte[][] trainGrammar(final int cycles, final String commandLineOptions, final String input,
             final boolean teeToStdout) throws Exception {
 
-        // EM guarantees that likelihood will always increase, but rule pruning may break that guarantee, so allow a
-        // small epsilon.
-        final float EPSILON = 25f;
+        throw new NotImplementedException();
 
-        final GrammarTrainer gt = new GrammarTrainer();
-        gt.ccModel = ccModel;
-
-        // Initialize output streams for each grammar we'll train
-        gt.outputGrammarStreams = new OutputStream[cycles];
-        for (int i = 0; i < gt.outputGrammarStreams.length; i++) {
-            gt.outputGrammarStreams[i] = new ByteArrayOutputStream();
-        }
-        final String output = executeTool(gt, "-cycles " + cycles + " " + commandLineOptions
-                + " -gd <null> -writeIntermediateGrammars", input, teeToStdout);
-
-        // Cleanup the static tag mapping (TODO Get rid of static mappings entirely)
-        Numberer.clearGlobalNumberer("tags");
-
-        final List<FloatList[]> results = trainingSetLikelihood(output);
-
-        //
-        // We expect the likelihood to increase on every EM iteration
-        //
-        assertFalse("Empty results", results.isEmpty());
-
-        for (int i = 0; i < cycles; i++) {
-            final FloatList[] cycle = results.get(i);
-
-            // Note - don't check the smoothing step, since likelihoods will often decline then
-            for (int j = 0; j < 2; j++) {
-                final FloatList likelihoods = cycle[j];
-                float previousLikelihood = likelihoods.get(0);
-
-                for (int k = 1; k < likelihoods.size(); k++) {
-                    final float ll = likelihoods.getFloat(k);
-                    assertTrue(String.format(
-                            "Unexpected likelihood decline from %.3f to %.3f on cycle %d, iteration %d",
-                            previousLikelihood, ll, i + 1, k + 1), ll + EPSILON >= previousLikelihood);
-                    previousLikelihood = ll;
-                }
-            }
-        }
-
-        final byte[][] grammars = new byte[gt.outputGrammarStreams.length][];
-        for (int i = 0; i < gt.outputGrammarStreams.length; i++) {
-            grammars[i] = ((ByteArrayOutputStream) gt.outputGrammarStreams[i]).toByteArray();
-        }
-        return grammars;
+//        // EM guarantees that likelihood will always increase, but rule pruning may break that guarantee, so allow a
+//        // small epsilon.
+//        final float EPSILON = 25f;
+//
+//        final GrammarTrainer gt = new GrammarTrainer();
+//        gt.ccModel = ccModel;
+//
+//        // Initialize output streams for each grammar we'll train
+//        gt.outputGrammarStreams = new OutputStream[cycles];
+//        for (int i = 0; i < gt.outputGrammarStreams.length; i++) {
+//            gt.outputGrammarStreams[i] = new ByteArrayOutputStream();
+//        }
+//        final String output = executeTool(gt, "-cycles " + cycles + " " + commandLineOptions
+//                + " -gd <null> -writeIntermediateGrammars", input, teeToStdout);
+//
+//        // Cleanup the static tag mapping (TODO Get rid of static mappings entirely)
+//        Numberer.clearGlobalNumberer("tags");
+//
+//        final List<FloatList[]> results = trainingSetLikelihood(output);
+//
+//        //
+//        // We expect the likelihood to increase on every EM iteration
+//        //
+//        assertFalse("Empty results", results.isEmpty());
+//
+//        for (int i = 0; i < cycles; i++) {
+//            final FloatList[] cycle = results.get(i);
+//
+//            // Note - don't check the smoothing step, since likelihoods will often decline then
+//            for (int j = 0; j < 2; j++) {
+//                final FloatList likelihoods = cycle[j];
+//                float previousLikelihood = likelihoods.get(0);
+//
+//                for (int k = 1; k < likelihoods.size(); k++) {
+//                    final float ll = likelihoods.getFloat(k);
+//                    assertTrue(String.format(
+//                            "Unexpected likelihood decline from %.3f to %.3f on cycle %d, iteration %d",
+//                            previousLikelihood, ll, i + 1, k + 1), ll + EPSILON >= previousLikelihood);
+//                    previousLikelihood = ll;
+//                }
+//            }
+//        }
+//
+//        final byte[][] grammars = new byte[gt.outputGrammarStreams.length][];
+//        for (int i = 0; i < gt.outputGrammarStreams.length; i++) {
+//            grammars[i] = ((ByteArrayOutputStream) gt.outputGrammarStreams[i]).toByteArray();
+//        }
+//        return grammars;
     }
 
     /**
