@@ -178,12 +178,14 @@ public class CellChart extends Chart {
             final int nt = edge.prod.parent;
             final float insideProb = edge.inside();
             boolean did_update = false;
+            boolean add_to_hash = false;
             ChartEdge old_edge;
             ChartEdge new_edge = (ChartEdge)edge;
             new_edge.insideCachedValue = edge.inside();
             if (viterbiMax && insideProb > getInside(nt)) {
                 while (true) {
                     old_edge = bestEdge.get(nt);
+                    add_to_hash = old_edge == null;
                     if (!(old_edge == null || old_edge.inside() < insideProb)) {
                         break;
                     }
@@ -194,7 +196,7 @@ public class CellChart extends Chart {
                 }
                 //bestEdge[nt] = (ChartEdge) edge;
             }
-            if(did_update)
+            if(add_to_hash)
                 addToHashSets(nt);
             //updateInside(nt, insideProb);
             updateCounts(edge.prod);
@@ -204,6 +206,7 @@ public class CellChart extends Chart {
         public void updateInside(final Production p, final float insideProb) {
             final int nt = p.parent;
             boolean did_update = false;
+            boolean add_to_hash = false;
             ChartEdge old_edge, new_edge;
             if(viterbiMax && insideProb > getInside(nt)) {
                 // there is a chance that we do the update
@@ -211,7 +214,9 @@ public class CellChart extends Chart {
                 new_edge.insideCachedValue = new_edge.inside();
                 while (true) {
                     old_edge = bestEdge.get(nt);
+                    add_to_hash = old_edge == null;
                     if (!(old_edge == null || old_edge.inside() < insideProb)) {
+                        add_to_hash = false;
                         break;
                     }
                     if (bestEdge.weakCompareAndSet(nt, old_edge, new_edge)) {
@@ -225,7 +230,7 @@ public class CellChart extends Chart {
 //                throw new NotImplementedException();
 ////                bestEdge[nt] = new ChartEdge(p, this);
 //            }
-            if(did_update)
+            if(add_to_hash)
                 addToHashSets(nt);
             //updateInside(nt, insideProb);
             updateCounts(p);
